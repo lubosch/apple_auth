@@ -5,6 +5,7 @@ module AppleAuth
     APPLE_AUD = 'https://appleid.apple.com'
     APPLE_CONFIG = AppleAuth.config
     APPLE_CODE_TYPE = 'authorization_code'
+    APPLE_REVOKE_URL = '/auth/revoke'
     APPLE_REVOKE_CODE_TYPE = 'refresh_token'
     APPLE_ALG = 'ES256'
 
@@ -23,11 +24,11 @@ module AppleAuth
     end
 
     def revoke!
-      request = Faraday.new(APPLE_REVOKE_URL) do |faraday|
+      request = Faraday.new(APPLE_AUD) do |faraday|
         faraday.request :url_encoded
         faraday.response :json
       end
-      request.post('/auth/revoke', apple_revoke_params)
+      request.post(APPLE_REVOKE_URL, apple_revoke_params)
     end
 
     private

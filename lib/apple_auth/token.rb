@@ -5,7 +5,10 @@ module AppleAuth
     APPLE_AUD = 'https://appleid.apple.com'
     APPLE_CONFIG = AppleAuth.config
     APPLE_CODE_TYPE = 'authorization_code'
+    APPLE_REVOKE_CODE_TYPE = 'refresh_token'
     APPLE_ALG = 'ES256'
+
+    attr_reader :code
 
     def initialize(code)
       @code = code
@@ -16,12 +19,27 @@ module AppleAuth
       access_token = apple_access_token
       access_token.refresh! if access_token.expired?
 
-      reponse_hash(access_token)
+      response_hash(access_token)
+    end
+
+    def revoke!
+      request = Faraday.new(APPLE_REVOKE_URL) do |faraday|
+        faraday.request :url_encoded
+        faraday.response :json
+      end
+      request.post('/auth/revoke', apple_revoke_params)
     end
 
     private
 
-    attr_reader :code
+    def apple_revoke_params
+      {
+        client_id: APPLE_CONFIG.apple_client_id,
+        client_secret: client_secret_from_jwt,
+        token_type_hint: APPLE_REVOKE_CODE_TYPE,
+        token: code
+      }
+    end
 
     def apple_token_params
       {
@@ -75,7 +93,7 @@ module AppleAuth
       }
     end
 
-    def reponse_hash(access_token)
+    def response_hash(access_token)
       token_hash = { access_token: access_token.token }
 
       expires = access_token.expires?
